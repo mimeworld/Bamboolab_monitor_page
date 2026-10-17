@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { requireAuth } from '../middleware/auth.js';
+import { fail } from '../middleware/errors.js';
+import { onChange, publicSnapshot } from '../printer/status.js';
+import { cameraFile, cameraStatus } from '../printer/camera.js';
+const router=Router();
+router.get('/printer/status',(_req,res)=>res.json(publicSnapshot()));
+router.get('/events',(req,res)=>{res.set({ 'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no' });res.flushHeaders();const send=()=>res.write(`event: status\ndata: ${JSON.stringify(publicSnapshot())}\n\n`);send();const off=onChange(send),heartbeat=setInterval(()=>res.write(': heartbeat\n\n'),20000);req.on('close',()=>{off();clearInterval(heartbeat);});});
+router.get('/camera/stream.m3u8',requireAuth,async(_req,res)=>{const file=await cameraFile('stream.m3u8');if(!file) fail(503,'CAMERA_UNAVAILABLE',cameraStatus().error);res.set('Cache-Control','no-store');res.type('application/vnd.apple.mpegurl').sendFile(file!);});
+router.get('/camera/segments/:name',requireAuth,async(req,res)=>{const name=String(req.params.name),file=await cameraFile(name);if(!file||!name.endsWith('.ts')) fail(404,'NOT_FOUND','영상 조각을 찾을 수 없습니다.');res.set('Cache-Control','no-store');res.type('video/mp2t').sendFile(file!);});
+export default router;

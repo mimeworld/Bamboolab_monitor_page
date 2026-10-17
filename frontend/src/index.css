@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Noto Sans KR", "Segoe UI", sans-serif;
+  --color-brand: #18a873;
+  --color-brand-dark: #0d8056;
+}
+
+@layer base {
+  body { @apply m-0 bg-[#f6f8f6] text-[#24332b] antialiased; }
+  button { @apply cursor-pointer; }
+}

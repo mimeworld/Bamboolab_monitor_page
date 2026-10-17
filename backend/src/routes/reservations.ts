@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import { rows } from '../repositories/db.js';
+import { fail } from '../middleware/errors.js';
+import { requireAuth } from '../middleware/auth.js';
+import { changeReservation, createReservation, expireReservations, type RecordRow, visibleReservation } from '../services/reservations.js';
+const router=Router();
+router.get('/',async(req,res)=>{await expireReservations();const from=req.query.from?new Date(String(req.query.from)):new Date(),to=req.query.to?new Date(String(req.query.to)):new Date(Date.now()+7*86400000);if(!Number.isFinite(from.valueOf())||!Number.isFinite(to.valueOf())||to<=from||to.valueOf()-from.valueOf()>31*86400000) fail(400,'BAD_RANGE','조회 기간이 올바르지 않습니다.');const records=await rows<RecordRow>("SELECT * FROM print_records WHERE reservation_status='BOOKED' AND reservation_start<? AND reservation_end>? ORDER BY reservation_start LIMIT 500",[to,from]);res.json({items:records.map(r=>visibleReservation(r,req.principal))});});
+router.use(requireAuth);
+router.post('/',async(req,res)=>{const id=await createReservation(req.body,req.principal!);res.status(201).json({id});});
+router.patch('/:id',async(req,res)=>res.json(visibleReservation(await changeReservation(req.params.id,req.body,req.principal!,'edit'),req.principal)));
+router.post('/:id/cancel',async(req,res)=>res.json(visibleReservation(await changeReservation(req.params.id,req.body,req.principal!,'cancel'),req.principal)));
+router.post('/:id/arm',async(req,res)=>res.json(visibleReservation(await changeReservation(req.params.id,req.body,req.principal!,'arm'),req.principal)));
+router.delete('/:id/arm',async(req,res)=>res.json(visibleReservation(await changeReservation(req.params.id,req.body,req.principal!,'disarm'),req.principal)));
+export default router;

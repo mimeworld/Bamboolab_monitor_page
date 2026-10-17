@@ -1,0 +1,9 @@
+import { ArrowRight, Settings2, ShieldCheck, Wifi, X } from 'lucide-react';
+import { IconButton, muted, primaryButton, softButton } from './ui';
+
+export function SettingsDialog({ close, notify }: { close: () => void; notify: (message: string) => void }) {
+  const input = 'mt-1 h-9 w-full rounded-md border border-[#dce6df] bg-white px-2 text-xs dark:border-[#45604d] dark:bg-[#304436]';
+  return <div className="fixed inset-0 z-20 grid place-items-center bg-[#101b14]/70 p-4" onMouseDown={event => event.target === event.currentTarget && close()}><div role="dialog" aria-modal="true" aria-label="프린터 연결 설정" className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl dark:bg-[#25362b]"><div className="mb-5 flex items-center gap-3"><span className="grid size-9 place-items-center rounded-md bg-[#eaf7ee] text-brand-dark"><Settings2 size={19}/></span><div className="flex-1"><h2 className="text-sm font-bold">프린터 연결 설정</h2><p className={`text-[10px] ${muted}`}>Studio X2D 네트워크 연결 정보를 관리합니다.</p></div><IconButton label="닫기" onClick={close}><X size={18}/></IconButton></div>
+    {[['프린터 이름', 'Studio X2D'], ['IP 주소 또는 호스트 이름', ''], ['시리얼 번호', ''], ['접속 코드', '']].map(([label, value]) => <label key={label} className={`mb-3 block text-xs ${muted}`}>{label}<input className={input} defaultValue={value} type={label === '접속 코드' ? 'password' : 'text'} placeholder={label === 'IP 주소 또는 호스트 이름' ? '프린터 주소' : label}/></label>)}
+    <p className={`mt-4 flex items-center gap-2 rounded-md bg-[#f4f8f5] p-2 text-[10px] dark:bg-[#304436] ${muted}`}><ShieldCheck size={16}/> 설정 저장은 백엔드 연동 후 사용할 수 있어요.</p><div className="mt-4 flex justify-between gap-2"><button className={softButton} onClick={() => notify('연결 테스트는 백엔드 연동 후 사용할 수 있어요.')}><Wifi size={15}/> 연결 테스트</button><button className={primaryButton} onClick={() => { close(); notify('설정 저장은 백엔드 연동 후 사용할 수 있어요.'); }}>저장 및 재연결 <ArrowRight size={15}/></button></div></div></div>;
+}

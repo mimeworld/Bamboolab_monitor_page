@@ -1,0 +1,23 @@
+import express from 'express';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import { db } from './repositories/db.js';
+import { env } from './config/env.js';
+import { errors } from './middleware/errors.js';
+import { csrfGuard, optionalAuth, originGuard } from './middleware/auth.js';
+import { bootstrapAdmin } from './services/users.js';
+import { loadSettings } from './config/settings.js';
+import { startMqtt, stopMqtt } from './printer/mqtt.js';
+import { startCamera, stopCamera } from './printer/camera.js';
+import { startExpiryJob } from './jobs/expiry.js';
+import auth from './routes/auth.js';
+import reservations from './routes/reservations.js';
+import prints from './routes/prints.js';
+import printer from './routes/printer.js';
+import admin from './routes/admin.js';
+const app=express();app.disable('x-powered-by');app.use(helmet());app.use(express.json({limit:'64kb'}));app.use(cookieParser());app.use(originGuard,optionalAuth,csrfGuard);
+app.get('/api/v1/health/live',(_req,res)=>res.json({status:'ok'}));
+app.get('/api/v1/health/ready',async(_req,res)=>{try{await db.query('SELECT 1');res.json({status:'ok'});}catch{res.status(503).json({status:'unavailable'});}});
+app.use('/api/v1/auth',auth);app.use('/api/v1/reservations',reservations);app.use('/api/v1',prints,printer);app.use('/api/v1/admin',admin);app.use(errors);
+async function main(){await db.query('SELECT 1');await bootstrapAdmin();await loadSettings();startMqtt();await startCamera();startExpiryJob();app.listen(env.port,'0.0.0.0',()=>console.log(`Backend listening on ${env.port}`));}
+main().catch(error=>{console.error(error);process.exit(1);});process.on('SIGTERM',()=>{stopMqtt();stopCamera();void db.end().then(()=>process.exit(0));});
