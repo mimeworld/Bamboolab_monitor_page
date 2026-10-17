@@ -1,5 +1,6 @@
 # Bambu Lab X2D 공용 프린터 웹 관리 시스템 설계서
 
+<<<<<<< HEAD
 > 상태: 백엔드·Docker 초기 구현 및 React/Tailwind UI 미리보기 · 갱신일: 2026-10-17  
 > 웹 화면은 데모 데이터로 구성된 미리보기이며 API와 연결되지 않았다. 아래 설계 중 실기 연동과 영상 중계는 별도 검증이 필요하다.
 
@@ -24,6 +25,10 @@ API 요청의 변경 메서드는 `Origin: PUBLIC_ORIGIN`이 필요하다. 로�
 - 실기 검증 전: MQTT 필드 매핑과 작업 ID 계약은 일반화된 예시다. `PRINTER_HOST`, `MQTT_PORT`, `MQTT_REPORT_TOPIC`이 없으면 MQTT는 연결하지 않고 상태는 오래됨/미연결로 표시한다. 실제 장비 메시지를 확보해 매핑 및 재연결 복구를 검증해야 한다.
 - 미구현: 복구 이벤트 영속 큐, 프론트엔드의 실제 API 연결, 자동화된 통합 테스트. 카메라 원본 프로토콜·코덱은 실기에서 확인해야 하며 소스가 없거나 변환에 실패하면 카메라 API는 503을 반환한다. 관리자 연결 테스트는 현재 연결 상태만 보고하고 새로운 후보 설정의 접속을 선검증하지 않는다. 이 항목들을 완료하기 전에는 실사용 출력 이력의 무손실 수집을 보장하지 않는다.
 - 로컬 개발 확인: `cd backend; npm install; npm run check` 및 `cd frontend; npm install; npm run check; npm run build`. Docker가 설치된 호스트에서는 `docker compose config`와 `docker compose up --build -d`로 검증한다.
+=======
+> 상태: 구현 전 검토용 초안 · 작성일: 2026-10-17  
+> 이 문서는 설계만 정의한다. 아래 디렉터리, API, 환경 변수는 구현 예정 사항이며 현재 실행 가능한 프로그램을 의미하지 않는다.
+>>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 
 ## [개요 및 설계 이유]
 
@@ -210,7 +215,11 @@ React 빌드 도구는 Vite를 사용하되 운영 시 개발 서버를 노출�
 
 ## [핵심 환경 변수 (.env)]
 
+<<<<<<< HEAD
 실제 `.env`는 Git에 커밋하지 않는다. 이 작업 공간에는 로컬 개발용 `.env`를 생성했다. 다른 장비에서는 `.env.example`을 복사해 비밀값을 새로 생성한다. 비밀값을 React 번들에 포함되는 환경 변수로 전달하지 않는다.
+=======
+실제 `.env`는 Git에 커밋하지 않는다. 아래는 이름과 용도이며 실제 파일은 구현 단계에서 만든다. 비밀값을 React 번들에 포함되는 환경 변수로 전달하지 않는다.
+>>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 
 | 변수 | 예시 또는 기본값 | 설명 |
 | --- | --- | --- |
@@ -249,19 +258,30 @@ Compose에서 DB 변수는 MySQL 초기화 변수와 명시적으로 매핑한�
 
 ## [프로젝트 구조]
 
+<<<<<<< HEAD
 현재 저장소 기준 구조다. 프론트엔드 화면은 역할별 폴더에 분리했고 스타일은 Tailwind 유틸리티와 최소한의 전역 설정으로 구성한다.
 
 ```text
 bamboolab_monitor/
+=======
+아래는 이 README가 있는 `Bamboolab_monitor_page/`를 기준으로 한 구현 예정 구조다. 이번 단계에서는 README만 작성한다.
+
+```text
+Bamboolab_monitor_page/
+>>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ├── README.md
 ├── LICENSE
 ├── compose.yaml
 ├── .env.example
+<<<<<<< HEAD
 ├── .env                    # 로컬 전용, Git 제외
+=======
+>>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ├── .gitignore
 ├── frontend/
 │   ├── Dockerfile
 │   ├── package.json
+<<<<<<< HEAD
 │   ├── index.html
 │   ├── tsconfig.json           # 프론트엔드 타입 검사
 │   ├── vite.config.ts         # React·Tailwind 및 개발용 /api 프록시
@@ -273,6 +293,14 @@ bamboolab_monitor/
 │       ├── components/         # 헤더·카드·행·설정 대화상자
 │       ├── pages/              # 대시보드·개인 기록 화면
 │       └── data/               # API 연결 전 데모 데이터와 타입
+=======
+│   ├── server/                 # 정적 파일 제공 및 API/SSE/영상 프록시
+│   └── src/
+│       ├── pages/              # Dashboard, Login, MyHistory, AdminUsers
+│       ├── components/         # Camera, PrintStatus, History, Reservation, Settings
+│       ├── api/                # REST 클라이언트 및 SSE 재연결
+│       └── types/
+>>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ├── backend/
 │   ├── Dockerfile
 │   ├── package.json
@@ -282,14 +310,24 @@ bamboolab_monitor/
 │       ├── routes/
 │       ├── services/           # 예약, 사용자, 출력 연결, 통계
 │       ├── repositories/       # 두 테이블 접근 및 트랜잭션
+<<<<<<< HEAD
 │       ├── printer/            # MQTT 상태 어댑터
 │       └── jobs/               # 예약 만료
+=======
+│       ├── printer/            # MQTT·카메라 어댑터, 작업 식별
+│       └── jobs/               # 예약 만료 및 장애 복구
+>>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ├── database/
 │   ├── schema.sql             # users, print_records만 생성
 │   └── migrations/            # 검토 후 순서대로 적용할 변경 SQL
 └── tests/
+<<<<<<< HEAD
     ├── integration/           # 향후 DB 경합·권한 검증
     └── fixtures/              # 향후 실기 MQTT 샘플
+=======
+    ├── integration/           # 예약 경합, 권한, 복구 검증
+    └── fixtures/              # 비밀값을 제거한 MQTT 샘플
+>>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ```
 
 ## [사용자 관리]
@@ -447,4 +485,8 @@ bamboolab_monitor/
 6. 컨테이너 재생성 후에도 사용자·예약·출력 이력·프린터 설정이 유지되고 백업에서 복원된다.
 7. 첨부 이미지의 배치를 따르며 로그인·권한·연결 끊김·예약 충돌·모바일 상태를 표시한다.
 
+<<<<<<< HEAD
 실기 적용 전 검토할 주요 정책은 공개 조회 범위, 예약 단위·상한, 사용자별 조회 권한, 다음 출력 연결 절차, 실제 사용량 미수집 시 수동 보정 방식이다. 위 완료 기준은 초기 구현의 완료를 뜻하지 않으며, 장비 연결 및 통합 테스트 후 확인한다.
+=======
+구현 전 검토할 주요 정책은 공개 조회 범위, 예약 단위·상한, 사용자별 조회 권한, 다음 출력 연결 절차, 실제 사용량 미수집 시 수동 보정 방식이다. 본 README 승인 후 애플리케이션 코드와 Docker 설정을 작성한다.
+>>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
