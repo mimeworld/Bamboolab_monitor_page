@@ -1,13 +1,12 @@
 # Bambu Lab X2D 공용 프린터 웹 관리 시스템 설계서
 
-<<<<<<< HEAD
-> 상태: 백엔드·Docker 초기 구현 및 React/Tailwind UI 미리보기 · 갱신일: 2026-10-17  
-> 웹 화면은 데모 데이터로 구성된 미리보기이며 API와 연결되지 않았다. 아래 설계 중 실기 연동과 영상 중계는 별도 검증이 필요하다.
+> 상태: 백엔드·React/Tailwind API 연동 구현 · 갱신일: 2026-10-18
+> 웹 화면은 실제 API 데이터를 표시한다. 프린터 MQTT 필드와 영상 소스는 실기에서 별도 검증이 필요하다.
 
 ## 빠른 시작
 
 1. `.env`는 로컬 개발용 난수 비밀번호와 키로 생성되어 있으며 Git에서 제외된다. 다른 장비에서는 `.env.example`을 복사하고 `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `JWT_SECRET`, `SETTINGS_ENCRYPTION_KEY`, `BOOTSTRAP_ADMIN_PASSWORD`를 각각 새 값으로 설정한다. 암호화 키는 32바이트 Base64, JWT 키는 최소 32바이트다.
-2. `PUBLIC_ORIGIN`을 실제 접속 출처와 정확히 맞춘다. 현재 기본값은 `http://localhost:8080`이며 Compose의 웹 포트는 `127.0.0.1`에만 바인딩된다. 외부 접속은 HTTPS 프록시를 구성하고 `COOKIE_SECURE=true`로 바꾼다.
+2. `PUBLIC_ORIGIN`을 실제 접속 출처와 정확히 맞춘다. 기본값은 `http://localhost:8080`이며 Compose의 웹 포트는 호스트 인터페이스에 공개된다. 외부 접속은 HTTPS 프록시를 구성하고 `COOKIE_SECURE=true`로 바꾼다.
 3. `docker compose up --build -d`를 실행한다. `http://localhost:8080`에서 UI가 열리고 `http://localhost:8080/api/v1/health/ready`로 API 준비 상태를 확인한다. `docker compose logs -f backend`로 시작 로그를 본다.
 4. 첫 설치에만 `.env`의 `BOOTSTRAP_ADMIN_LOGIN` 및 `BOOTSTRAP_ADMIN_PASSWORD`로 관리자 계정이 생성된다. 첫 로그인 후 `PATCH /api/v1/auth/password`로 비밀번호를 바꾸고 `.env`에서 초기 비밀번호를 제거한다. 이후 `docker compose up -d --force-recreate backend`로 환경 변수를 갱신한다. DB에 사용자가 이미 있으면 초기 관리자 값은 재적용되지 않는다.
 
@@ -15,20 +14,18 @@ Compose는 `frontend`, `backend`, `mysql`을 **`bamboolab-monitor`** bridge 네�
 이미지는 Node.js 22와 MySQL 8.4를 기준으로 작성했다. 관리자 설정에서 지정하는 프린터 접속 주소는 사설 IPv4로 제한한다. 프린터 고유 예약 키는 단일 장비용 `x2d-primary`로 고정하여 시리얼 번호 수정으로 기존 예약이 분리되지 않게 한다.
 영상 원본은 `CAMERA_SOURCE_URL` 또는 관리자 설정에 `rtsp://`, `rtsps://`, `http://`, `https://` 형식의 사설 IPv4 주소로 지정한다. FFmpeg가 읽을 수 있는 소스일 때만 `/api/v1/camera/stream.m3u8`와 `/api/v1/camera/segments/:name`이 제공되며 두 경로 모두 로그인 인증을 확인한다. X2D의 실제 영상 URL과 인증 방식은 장비에서 별도로 검증해야 한다.
 
-API 요청의 변경 메서드는 `Origin: PUBLIC_ORIGIN`이 필요하다. 로그인 후 `GET /api/v1/auth/csrf`에서 받은 토큰을 `X-CSRF-Token` 헤더에 보낸다. 쿠키 인증을 사용하며 첫 비밀번호 변경 전에는 나머지 기능이 제한된다. 현재 UI는 데모 데이터를 보여주므로 API 기능 확인은 HTTP 클라이언트로 수행한다.
+API 요청의 변경 메서드는 `Origin: PUBLIC_ORIGIN`이 필요하다. 프론트엔드가 로그인 쿠키와 `GET /api/v1/auth/csrf`에서 받은 `X-CSRF-Token`을 사용한다. 초기 비밀번호 변경 전에는 변경 화면과 로그아웃만 사용할 수 있다. 화면은 공개 상태·예약·출력 목록을 REST로 불러오고 `/api/v1/events` SSE로 프린터 상태를 갱신하며, 목록은 30초 간격으로 다시 조회한다. 로그인하면 개인 출력·사용량과 인증된 카메라 HLS 영상을 사용한다. 관리자 설정은 관리자 계정에만 표시한다.
 
 프론트엔드는 React + Tailwind CSS로 빌드한다. 브라우저는 같은 출처의 `/api` 경로로 요청해야 하며, `frontend/server/index.js`가 Compose 서비스 이름인 `backend`의 `http://backend:3000`으로 프록시한다. Compose의 `BACKEND_URL`도 같은 서비스 이름을 지정한다. 브라우저에 컨테이너 내부 주소나 별도 IP를 지정하지 않는다. Vite 개발 서버의 `/api` 프록시 역시 `backend:3000`을 사용하므로 로컬에서 개발 서버만 실행할 경우 `backend` 호스트를 해석할 수 있는 Compose 네트워크 환경이 필요하다.
+
+관리자로 로그인하면 상단의 **사용자 관리**와 **출력 보정** 화면을 사용할 수 있다. 사용자 관리에서 일반 사용자 계정을 발급하고 표시 이름·역할·활성 상태를 변경하거나 다른 사용자의 비밀번호를 재설정한다. 마지막 활성 관리자의 권한 강등·비활성화는 서버가 거부한다. 출력 보정에서는 기간별 출력 목록을 조회하고 소유자와 실제 필라멘트 사용량을 수정한다. 보정 사유는 필수이며 서버의 `version` 검사로 동시 수정 충돌을 감지한다. 변경 후 목록과 개인 통계를 다시 조회한다.
 
 ### 이번 구현 범위와 남은 작업
 
 - 구현: MySQL 두 테이블 초기화, 관리자 첫 설치, 계정 인증·권한, 사용자 관리, 예약 생성·수정·취소·연결 대기, 출력 목록·집계·관리자 보정, 상태 SSE, 암호화 설정 파일, MQTT 연결 및 기본 상태 수집, 사설 IPv4 영상 소스의 FFmpeg HLS 변환과 인증된 재생 목록·조각 제공.
 - 실기 검증 전: MQTT 필드 매핑과 작업 ID 계약은 일반화된 예시다. `PRINTER_HOST`, `MQTT_PORT`, `MQTT_REPORT_TOPIC`이 없으면 MQTT는 연결하지 않고 상태는 오래됨/미연결로 표시한다. 실제 장비 메시지를 확보해 매핑 및 재연결 복구를 검증해야 한다.
-- 미구현: 복구 이벤트 영속 큐, 프론트엔드의 실제 API 연결, 자동화된 통합 테스트. 카메라 원본 프로토콜·코덱은 실기에서 확인해야 하며 소스가 없거나 변환에 실패하면 카메라 API는 503을 반환한다. 관리자 연결 테스트는 현재 연결 상태만 보고하고 새로운 후보 설정의 접속을 선검증하지 않는다. 이 항목들을 완료하기 전에는 실사용 출력 이력의 무손실 수집을 보장하지 않는다.
-- 로컬 개발 확인: `cd backend; npm install; npm run check` 및 `cd frontend; npm install; npm run check; npm run build`. Docker가 설치된 호스트에서는 `docker compose config`와 `docker compose up --build -d`로 검증한다.
-=======
-> 상태: 구현 전 검토용 초안 · 작성일: 2026-10-17  
-> 이 문서는 설계만 정의한다. 아래 디렉터리, API, 환경 변수는 구현 예정 사항이며 현재 실행 가능한 프로그램을 의미하지 않는다.
->>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
+- 미구현: 복구 이벤트 영속 큐와 자동화된 DB 통합 테스트. 카메라 원본 프로토콜·코덱은 실기에서 확인해야 하며 소스가 없거나 변환에 실패하면 카메라 API는 503을 반환한다. 관리자 연결 테스트는 현재 연결 상태만 보고하고 새로운 후보 설정의 접속을 선검증하지 않는다. 이 항목들을 완료하기 전에는 실사용 출력 이력의 무손실 수집을 보장하지 않는다.
+- 로컬 개발 확인: `cd backend; npm install; npm run check` 및 `cd frontend; npm install; npm run check; npm run build; npm run test:proxy; npm run test:admin-api`. Docker가 설치된 호스트에서는 `docker compose config`와 `docker compose up --build -d`로 검증한다.
 
 ## [개요 및 설계 이유]
 
@@ -61,7 +58,7 @@ API 요청의 변경 메서드는 `Origin: PUBLIC_ORIGIN`이 필요하다. 로�
 ```mermaid
 flowchart LR
     U[브라우저 / React] -->|REST / JWT 쿠키| A[Node.js API]
-    A -->|SSE 상태·예약 변경| U
+    A -->|SSE 프린터 상태| U
     P[X2D 프린터] -->|MQTT 상태| M[MQTT 어댑터]
     M --> A
     P -->|별도 영상 스트림| C[영상 어댑터 / FFmpeg]
@@ -75,7 +72,7 @@ flowchart LR
 2. MQTT 어댑터는 모델·펌웨어별 원본 필드를 공통 상태로 변환한다. 부분 업데이트는 기존 상태에 병합하며 누락 필드를 0으로 덮어쓰지 않는다.
 3. 진행률, 출력 단계, 남은 시간, 노즐별 온도, 베드 온도, 오류와 마지막 수신 시각을 메모리에 유지한다. 지원하지 않는 필드는 `null`과 함께 미지원으로 표시한다.
 4. 실제 작업의 시작·종료와 주요 변경만 MySQL에 기록한다. 모든 온도 메시지를 DB에 누적하지 않는다.
-5. API는 커밋된 변경을 SSE로 전달한다. 브라우저 재접속 시 REST로 전체 상태와 예약 목록을 다시 동기화한다.
+5. 현재 SSE는 프린터 상태를 전달한다. 프론트엔드는 예약·출력 목록을 30초 간격으로 REST 재조회하고, 수동 새로고침도 제공한다.
 6. 영상 어댑터는 검증된 프린터 영상 소스를 HLS로 변환한다. React는 브라우저 지원에 따라 기본 플레이어나 HLS 플레이어를 사용한다. 영상은 수 초 지연될 수 있다.
 
 ### 데이터 모델: 애플리케이션 테이블은 정확히 2개
@@ -215,11 +212,7 @@ React 빌드 도구는 Vite를 사용하되 운영 시 개발 서버를 노출�
 
 ## [핵심 환경 변수 (.env)]
 
-<<<<<<< HEAD
 실제 `.env`는 Git에 커밋하지 않는다. 이 작업 공간에는 로컬 개발용 `.env`를 생성했다. 다른 장비에서는 `.env.example`을 복사해 비밀값을 새로 생성한다. 비밀값을 React 번들에 포함되는 환경 변수로 전달하지 않는다.
-=======
-실제 `.env`는 Git에 커밋하지 않는다. 아래는 이름과 용도이며 실제 파일은 구현 단계에서 만든다. 비밀값을 React 번들에 포함되는 환경 변수로 전달하지 않는다.
->>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 
 | 변수 | 예시 또는 기본값 | 설명 |
 | --- | --- | --- |
@@ -258,49 +251,31 @@ Compose에서 DB 변수는 MySQL 초기화 변수와 명시적으로 매핑한�
 
 ## [프로젝트 구조]
 
-<<<<<<< HEAD
 현재 저장소 기준 구조다. 프론트엔드 화면은 역할별 폴더에 분리했고 스타일은 Tailwind 유틸리티와 최소한의 전역 설정으로 구성한다.
 
 ```text
 bamboolab_monitor/
-=======
-아래는 이 README가 있는 `Bamboolab_monitor_page/`를 기준으로 한 구현 예정 구조다. 이번 단계에서는 README만 작성한다.
-
-```text
-Bamboolab_monitor_page/
->>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ├── README.md
 ├── LICENSE
 ├── compose.yaml
 ├── .env.example
-<<<<<<< HEAD
 ├── .env                    # 로컬 전용, Git 제외
-=======
->>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ├── .gitignore
 ├── frontend/
 │   ├── Dockerfile
 │   ├── package.json
-<<<<<<< HEAD
 │   ├── index.html
 │   ├── tsconfig.json           # 프론트엔드 타입 검사
 │   ├── vite.config.ts         # React·Tailwind 및 개발용 /api 프록시
 │   ├── server/                 # 정적 파일 제공 및 API/SSE/영상 프록시
+│   ├── tests/                  # API 프록시·관리자 요청 계약 검증
 │   └── src/
-│       ├── App.tsx             # 화면 전환과 미리보기 상태
+│       ├── App.tsx             # 로그인 상태·데이터 갱신·화면 전환
 │       ├── main.tsx
 │       ├── index.css           # Tailwind 진입점과 전역 테마
-│       ├── components/         # 헤더·카드·행·설정 대화상자
-│       ├── pages/              # 대시보드·개인 기록 화면
-│       └── data/               # API 연결 전 데모 데이터와 타입
-=======
-│   ├── server/                 # 정적 파일 제공 및 API/SSE/영상 프록시
-│   └── src/
-│       ├── pages/              # Dashboard, Login, MyHistory, AdminUsers
-│       ├── components/         # Camera, PrintStatus, History, Reservation, Settings
-│       ├── api/                # REST 클라이언트 및 SSE 재연결
-│       └── types/
->>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
+│       ├── api/                # REST·CSRF 클라이언트, 응답 타입, 표시 형식
+│       ├── components/         # 헤더·카드·행·인증·설정 대화상자
+│       └── pages/              # 대시보드·개인 기록·관리자 화면
 ├── backend/
 │   ├── Dockerfile
 │   ├── package.json
@@ -310,24 +285,14 @@ Bamboolab_monitor_page/
 │       ├── routes/
 │       ├── services/           # 예약, 사용자, 출력 연결, 통계
 │       ├── repositories/       # 두 테이블 접근 및 트랜잭션
-<<<<<<< HEAD
 │       ├── printer/            # MQTT 상태 어댑터
 │       └── jobs/               # 예약 만료
-=======
-│       ├── printer/            # MQTT·카메라 어댑터, 작업 식별
-│       └── jobs/               # 예약 만료 및 장애 복구
->>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ├── database/
 │   ├── schema.sql             # users, print_records만 생성
 │   └── migrations/            # 검토 후 순서대로 적용할 변경 SQL
 └── tests/
-<<<<<<< HEAD
     ├── integration/           # 향후 DB 경합·권한 검증
     └── fixtures/              # 향후 실기 MQTT 샘플
-=======
-    ├── integration/           # 예약 경합, 권한, 복구 검증
-    └── fixtures/              # 비밀값을 제거한 MQTT 샘플
->>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b
 ```
 
 ## [사용자 관리]
@@ -360,7 +325,7 @@ Bamboolab_monitor_page/
 - 서버는 요청마다 사용자의 활성 상태와 현재 역할·토큰 버전을 확인한다. 프론트엔드의 아이콘 숨김만으로 권한을 판단하지 않는다.
 - 초기 비밀번호 변경 전에는 비밀번호 변경과 로그아웃만 허용한다. 비밀번호 변경·계정 비활성화·권한 변경 시 버전을 증가시켜 기존 토큰을 폐기한다.
 - 로그아웃도 버전을 증가시키는 방식으로 설계하며 해당 사용자의 모든 기기에서 로그아웃된다. 별도 세션 테이블이나 refresh token은 초기 버전에서 사용하지 않는다.
-- SSE는 토큰 만료 시 종료하고 계정 상태도 주기적으로 다시 확인한다. HLS 재생 목록과 조각 파일 요청 모두 권한을 검사한다.
+- HLS 재생 목록과 조각 파일 요청은 각각 권한을 검사한다. 현재 SSE는 공개 프린터 상태만 전달한다.
 
 ## [주요 API]
 
@@ -374,7 +339,7 @@ Bamboolab_monitor_page/
 | `GET /auth/csrf` | 로그인 | 변경 요청용 CSRF 토큰 발급 |
 | `PATCH /auth/password` | 로그인 | 현재 비밀번호 확인 후 본인 비밀번호 변경 |
 | `GET /printer/status` | 공개 | 프린터·예약 상태와 마지막 수신 시각, 공개 필드만 반환 |
-| `GET /events` | 공개/로그인 | 권한에 맞춘 SSE: 상태·예약·이력 변경, 비밀 정보 제외 |
+| `GET /events` | 공개/로그인 | 공개 프린터 상태 SSE, 비밀 정보 제외 |
 | `GET /camera/stream.m3u8` | 로그인 | 인증된 HLS 재생 목록 |
 | `GET /camera/segments/:name` | 로그인 | 허용된 조각 파일만 제공, 경로 탐색 차단 |
 | `GET /reservations?from=&to=` | 공개/로그인 | 공개는 점유 시간만, 본인/관리자에게 허용 상세 제공 |
@@ -485,8 +450,4 @@ Bamboolab_monitor_page/
 6. 컨테이너 재생성 후에도 사용자·예약·출력 이력·프린터 설정이 유지되고 백업에서 복원된다.
 7. 첨부 이미지의 배치를 따르며 로그인·권한·연결 끊김·예약 충돌·모바일 상태를 표시한다.
 
-<<<<<<< HEAD
 실기 적용 전 검토할 주요 정책은 공개 조회 범위, 예약 단위·상한, 사용자별 조회 권한, 다음 출력 연결 절차, 실제 사용량 미수집 시 수동 보정 방식이다. 위 완료 기준은 초기 구현의 완료를 뜻하지 않으며, 장비 연결 및 통합 테스트 후 확인한다.
-=======
-구현 전 검토할 주요 정책은 공개 조회 범위, 예약 단위·상한, 사용자별 조회 권한, 다음 출력 연결 절차, 실제 사용량 미수집 시 수동 보정 방식이다. 본 README 승인 후 애플리케이션 코드와 Docker 설정을 작성한다.
->>>>>>> 0fd3202a63a85fec1b5bc6f5409eac7f85ca768b

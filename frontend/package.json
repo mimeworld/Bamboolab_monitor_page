@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "check": "tsc --noEmit",
+    "test:proxy": "node tests/proxy.test.mjs",
+    "test:admin-api": "node tests/admin-api.test.mjs",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.7.0",
     "express": "^4.21.2",
+    "hls.js": "^1.7.3",
     "http-proxy-middleware": "^3.0.3",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",

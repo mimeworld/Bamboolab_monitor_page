@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 const app=express();
 const root=join(dirname(fileURLToPath(import.meta.url)),'..','dist');
 app.disable('x-powered-by');
-app.use('/api',createProxyMiddleware({target:process.env.BACKEND_URL||'http://backend:3000',changeOrigin:false,proxyTimeout:0,timeout:0}));
+app.use('/api',createProxyMiddleware({target:process.env.BACKEND_URL||'http://backend:3000',changeOrigin:false,pathRewrite:path=>`/api${path}`,proxyTimeout:0,timeout:0}));
 app.use(express.static(root));
 app.get('*',(_req,res)=>res.sendFile(join(root,'index.html')));
 app.listen(Number(process.env.PORT||8080),'0.0.0.0');
