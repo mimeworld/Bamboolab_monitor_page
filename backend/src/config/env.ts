@@ -17,7 +17,6 @@ if (encryptionKey.length !== 32) throw new Error('SETTINGS_ENCRYPTION_KEY must b
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: number('BACKEND_PORT', 3000),
-  publicOrigin: required('PUBLIC_ORIGIN'),
   db: { host: process.env.DB_HOST || 'mysql', port: number('DB_PORT', 3306), name: required('DB_NAME'), user: required('DB_USER'), password: required('DB_PASSWORD') },
   jwtSecret, encryptionKey,
   jwtIssuer: process.env.JWT_ISSUER || 'bambu-monitor', jwtAudience: process.env.JWT_AUDIENCE || 'bambu-web', jwtTtl: number('JWT_TTL_SECONDS', 3600),

@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import type { User } from '../api/types';
 import { card, muted, primaryButton, softButton } from '../components/ui';
 
-const input = 'mt-1 h-9 w-full rounded-md border border-[#dce6df] bg-white px-2 text-xs outline-none focus:border-brand dark:border-[#45604d] dark:bg-[#304436]';
+const input = 'mt-1 h-9 w-full rounded-md border border-[#dce6df] bg-white px-2 text-xs outline-none focus:border-brand dark:border-[#555d65] dark:bg-[#2b3035]';
 
 function UserEditor({ target, currentUserId, onSaved, onCurrentUserChanged, notify }: { target: User; currentUserId: string; onSaved: () => Promise<void>; onCurrentUserChanged: (user: User) => void; notify: (message: string) => void }) {
   const [displayName, setDisplayName] = useState(target.displayName);
@@ -36,7 +36,7 @@ function UserEditor({ target, currentUserId, onSaved, onCurrentUserChanged, noti
     {target.mustChangePassword && <p className="mt-2 text-[10px] text-amber-700">다음 로그인 때 비밀번호 변경 필요</p>}
     {error && <p role="alert" className="mt-2 text-xs text-red-600">{error}</p>}
     <div className="mt-3 flex flex-wrap gap-2"><button className={primaryButton} disabled={busy || !changed} onClick={() => void save()}><Save size={14}/> 변경 저장</button>{!own && <button className={softButton} disabled={busy} onClick={() => { setResetOpen(value => !value); setError(''); }}><KeyRound size={14}/> 비밀번호 재설정</button>}</div>
-    {resetOpen && <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg bg-[#f7faf7] p-3 dark:bg-[#304436]"><label className={`min-w-[200px] flex-1 text-[10px] font-semibold ${muted}`}>새 임시 비밀번호<input className={input} type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={event => setNewPassword(event.target.value)} placeholder="12자 이상"/></label><button className={primaryButton} disabled={busy || newPassword.length < 12} onClick={() => void reset()}>재설정</button><button className={softButton} onClick={() => { setResetOpen(false); setNewPassword(''); }} aria-label="비밀번호 재설정 닫기"><X size={14}/></button></div>}
+    {resetOpen && <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg bg-[#f7faf7] p-3 dark:bg-[#2b3035]"><label className={`min-w-[200px] flex-1 text-[10px] font-semibold ${muted}`}>새 임시 비밀번호<input className={input} type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={event => setNewPassword(event.target.value)} placeholder="12자 이상"/></label><button className={primaryButton} disabled={busy || newPassword.length < 12} onClick={() => void reset()}>재설정</button><button className={softButton} onClick={() => { setResetOpen(false); setNewPassword(''); }} aria-label="비밀번호 재설정 닫기"><X size={14}/></button></div>}
   </article>;
 }
 

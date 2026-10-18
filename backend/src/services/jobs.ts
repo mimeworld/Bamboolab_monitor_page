@@ -4,8 +4,8 @@ import { env } from '../config/env.js';
 import { execute, rows, withPrinterLock } from '../repositories/db.js';
 import { printerKey } from './reservations.js';
 // Only explicit, verified job IDs produce persistent print rows.
-export async function ingestJob(raw:any){const print=raw?.print||raw;const id=print?.job_id, status=String(print?.status||'').toUpperCase();if(typeof id!=='string'||!id||!['PRINTING','PAUSED','COMPLETED','FAILED','CANCELLED'].includes(status))return;
-  const key=printerKey(),jobKey=`${key}:${id}`.slice(0,255),file=typeof print.file_name==='string'?print.file_name:null;
+export async function ingestJob(raw:any){const print=raw?.print||raw;const id=print?.job_id, reported=String(print?.status||print?.gcode_state||'').toUpperCase();const status=({RUNNING:'PRINTING',PAUSE:'PAUSED',FINISH:'COMPLETED'} as Record<string,string>)[reported]||reported;if(typeof id!=='string'||!id||!['PRINTING','PAUSED','COMPLETED','FAILED','CANCELLED'].includes(status))return;
+  const key=printerKey(),jobKey=`${key}:${id}`.slice(0,255),file=[print.file_name,print.gcode_file,print.subtask_name].find((value):value is string=>typeof value==='string'&&!!value)||null;
   await withPrinterLock(key,async connection=>{
     const existing=(await rows<RowDataPacket>('SELECT * FROM print_records WHERE job_key=? FOR UPDATE',[jobKey],connection))[0];
     if(existing){if(['COMPLETED','FAILED','CANCELLED'].includes(existing.print_status))return;await execute('UPDATE print_records SET print_status=?,finished_at=IF(? IN (\'COMPLETED\',\'FAILED\',\'CANCELLED\'),UTC_TIMESTAMP(3),finished_at),version=version+1 WHERE id=?',[status,status,existing.id],connection);return;}

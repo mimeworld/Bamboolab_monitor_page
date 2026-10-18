@@ -2,7 +2,7 @@ name: bamboolab-monitor
 
 services:
   mysql:
-    image: mysql:8.4
+    image: mysql:8.0
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_NAME}
@@ -31,6 +31,7 @@ services:
       SETTINGS_PATH: /app/data/printer-settings.json
     volumes:
       - app_data:/app/data
+      - ./certs:/app/certs:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -48,7 +49,7 @@ services:
       PORT: 8080
       BACKEND_URL: http://backend:3000
     ports:
-      - "${WEB_PORT:-8080}:8080"
+      - 8088:8080
     depends_on:
       backend:
         condition: service_healthy

@@ -4,3 +4,5 @@ dist/
 .env.*
 !.env.example
 *.log
+certs/
+Docs/프린터_MQTT_연결_가이드.md
